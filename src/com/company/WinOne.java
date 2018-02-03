@@ -63,6 +63,8 @@ public class WinOne {
 
                             String ds = Cdiam.getSelectedItem().toString();
                             String ls = Clong.getSelectedItem().toString();
+                            String countS = cnt.getText();
+                            int count = Integer.parseInt(countS);
 
                             String[] q = {ds, ls};
                         try {
@@ -73,8 +75,17 @@ public class WinOne {
                             e.printStackTrace();
                         }
 
+                        try{
+                            double amount = count * val;
+                            System.out.print("Pi " + amount);
+                        }catch (NumberFormatException e){
+                            e.printStackTrace();
+                        }
 
-                        System.out.print("Pi " + q[0] + " + " + q[1] + " val is " + val);
+
+
+
+
                     }
                 });
                 box1.add(calc);
