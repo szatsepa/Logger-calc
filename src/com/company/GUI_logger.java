@@ -17,10 +17,14 @@ public class GUI_logger {
     private static JComboBox selectLeng;
     private static JComboBox diamC;
     private static JComboBox longC;
-    private static JTextField cnt, ant;
+    private static JTextField cnt, ant, antSumm;
     private static DbSQLite db;
     private static JCheckBox cb;
-    private static JButton calculate, erace;
+    private static JButton calculate, erace, exit;
+    private static Font font;
+    private static Font fontL;
+    private static JFrame frame;
+    private static String message;
 
 
     public static void main (String[] args) throws Throwable{
@@ -33,12 +37,16 @@ public class GUI_logger {
 
         elementsLeng = new String[]{"Ukranian","English","Russian"};
 
+        message = "Помилка введення - тільки цифри!";
 
+        font = new Font("Calibri", Font.BOLD, 18);
+
+        fontL = new Font("Calibri", Font.BOLD,16);
 
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                JFrame frame = new JFrame("Logger calculator");
+                frame = new JFrame("Logger calculator");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setSize(300, 500);
                 frame.setLocation(400, 320);
@@ -47,13 +55,21 @@ public class GUI_logger {
                 leng = selectLenguage("Ukranian");
 
                 cb = new JCheckBox("ISO 4480-83");
+                cb.setFont(fontL);
                 JLabel lbl0 = new JLabel(leng[1]);
+                lbl0.setFont(fontL);
                 JLabel lbl1 = new JLabel(leng[2]);
+                lbl1.setFont(fontL);
                 diamC = new JComboBox(elementsD);
                 JLabel lbl2 = new JLabel(leng[3]);
+                lbl2.setFont(fontL);
                 longC = new JComboBox(elementsL);
                 JLabel lbl3 = new JLabel(leng[4]);
+                lbl3.setFont(fontL);
                 JLabel lbl4 = new JLabel(leng[0]);
+                lbl4.setFont(fontL);
+                JLabel lbl5 = new JLabel(leng[7]);
+                lbl5.setFont(fontL);
                 selectLeng = new JComboBox(elementsLeng);
                 selectLeng.addActionListener(new ActionListener() {
                     @Override
@@ -66,14 +82,24 @@ public class GUI_logger {
                         lbl2.setText(tmp[3]);
                         lbl3.setText(tmp[4]);
                         lbl4.setText(tmp[0]);
+                        lbl5.setText(tmp[7]);
                         calculate.setText(tmp[5]);
                         erace.setText(tmp[6]);
+                        message = tmp[8];
                     }
                 });
                 cnt = new JTextField(12);
+                cnt.setFont(font);
+
                 calculate = new JButton(leng[5]);
                 erace = new JButton(leng[6]);
+                exit = new JButton("Exit");
                 ant = new JTextField(12);
+                antSumm = new JTextField(12);
+                ant.setEditable(false);
+                antSumm.setEditable(false);
+                ant.setFont(font);
+                antSumm.setFont(font);
 
 
 
@@ -128,6 +154,16 @@ public class GUI_logger {
                 constraints.gridwidth = GridBagConstraints.REMAINDER;
                 gbl.setConstraints(cnt,constraints);
                 frame.add(cnt);
+                cnt.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        try {
+                            actionCalculate();
+                        } catch (Throwable throwable) {
+                            errSymbol();
+                        }
+                    }
+                });
 
                 constraints.gridwidth = GridBagConstraints.REMAINDER;
                 gbl.setConstraints(calculate, constraints);
@@ -136,33 +172,12 @@ public class GUI_logger {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
 
-                        double val = 0;
-
-
-                        String ds = diamC.getSelectedItem().toString();
-                        String ls = longC.getSelectedItem().toString();
-                        String countS = cnt.getText();
-                        int count = Integer.parseInt(countS);
-
-                        String[] q = {ds, ls};
                         try {
-                            val = DbSQLite.getValue(q);
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (SQLException e) {
-                            e.printStackTrace();
+                            actionCalculate();
+                        } catch (Throwable throwable) {
+                            errSymbol();
+                            //throwable.printStackTrace();
                         }
-
-                        try{
-                            double amount = count * val;
-                            ant.setText(String.valueOf(amount));
-
-                        }catch (NumberFormatException e){
-                            e.printStackTrace();
-                        }
-
-
-
 
 
                     }
@@ -171,9 +186,27 @@ public class GUI_logger {
                 gbl.setConstraints(ant,constraints);
                 frame.add(ant);
 
+                gbl.setConstraints(lbl5,constraints);
+                frame.add(lbl5);
+
+                gbl.setConstraints(antSumm,constraints);
+                frame.add(antSumm);
+
+                constraints.gridwidth = 1;
+
                 gbl.setConstraints(erace,constraints);
                 frame.add(erace);
                 erace.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        antSumm.setText("");
+                    }
+                });
+
+
+                gbl.setConstraints(exit,constraints);
+                frame.add(exit);
+                exit.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent actionEvent) {
                         frame.dispose();
@@ -187,12 +220,53 @@ public class GUI_logger {
 
     }
 
+    private static void errSymbol(){
+        JOptionPane.showMessageDialog(frame,message);
+        cnt.setText("");
+    }
+
+    private static void actionCalculate() throws Throwable{
+        double val = 0;
+
+
+        String ds = diamC.getSelectedItem().toString();
+        String ls = longC.getSelectedItem().toString();
+        String countS = cnt.getText();
+        int count = Integer.parseInt(countS);
+
+        String[] q = {ds, ls};
+        try {
+            val = DbSQLite.getValue(q);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        try{
+            double amount = Math.ceil((count * val)*100)/100;
+            double amountSumm = 0;
+            ant.setText(String.valueOf(amount));
+            if(antSumm.getText().equals("")){
+                antSumm.setText(String.valueOf(amount));
+            }else{
+                amountSumm = Math.ceil((Double.parseDouble(antSumm.getText()) + amount)*100)/100;
+                antSumm.setText(String.valueOf(amountSumm));
+            }
+
+        }catch (NumberFormatException e){
+            e.printStackTrace();
+        }
+
+
+    }
+
     private static String[] selectLenguage(String leng){
 
         String[] vocabulary = new String[7];
-        String[] vocabularyU = new String[]{"Виберіть мову","Виберіть","Діаметер см","Довжину м","Вкажіть кількисть","Рахувати","Стерти"};
-        String[] vocabularyE = new String[]{"Select a language","Select","Diameter sm","Length m","Specify the quantity","Calculate","Clear"};
-        String[] vocabularyR = new String[]{"Выберите язык","Выберите","Диаметр см","Длину м","Укажите количество","Расчитать","Очистить"};
+        String[] vocabularyU = new String[]{"Виберіть мову","Виберіть","Діаметер см","Довжину м","Вкажіть кількисть","Рахувати","Стерти","Всього м.куб","Помилка введення - тільки цифри!"};
+        String[] vocabularyE = new String[]{"Select a language","Select","Diameter sm","Length m","Specify the quantity","Calculate","Clear", "Total cbm","Input error - only digits!"};
+        String[] vocabularyR = new String[]{"Выберите язык","Выберите","Диаметр см","Длину м","Укажите количество","Расчитать","Очистить", "Всего м.куб","Ошибка ввода - только цифры!"};
 
         if(leng.equals("English")){
             vocabulary = vocabularyE;
